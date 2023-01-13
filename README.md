@@ -1,6 +1,6 @@
 # socket_from_cpp_to_python
 
-## Usage
+## usage
 server (python)
 ```
 $ python3 server.py
