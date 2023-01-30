@@ -9,7 +9,7 @@ class InetServer(BaseServer):
     def __init__(self, host: str = "0.0.0.0", port: int = 8080) -> None:
         self.address = (host, port)
         super().__init__(timeout=600000, buffer=1024)  # 親クラスのinit
-        self.accept(self.address, socket.AF_INET, socket.SOCK_STREAM, 0)
+        # self.accept(self.address, socket.AF_INET, socket.SOCK_STREAM, 0)
         
         # 保存先のパス
         self.save_file = Path("./data/train_data.csv")
@@ -20,12 +20,12 @@ class InetServer(BaseServer):
     def _initial_save_file(self):
         """ヘッダ情報を書き込む"""
         with open(self.save_file, mode='w') as f:
-            f.write("loss,accuracy\n")
+            f.write("train_loss,test_loss,train_accuracy,test_accuracy\n")
 
     def start_server(self):
         print("Server started :", (self.address))
-        while True:
-            self.accept(self.address, socket.AF_INET, socket.SOCK_STREAM, 0)
+        self.accept(self.address, socket.AF_INET, socket.SOCK_STREAM, 0)
+        print("Server ended")
 
     def respond(self, message: str) -> str:
         """データ受け取ってからのサーバー側の処理"""

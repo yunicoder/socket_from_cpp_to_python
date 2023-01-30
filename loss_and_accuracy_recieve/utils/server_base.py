@@ -39,7 +39,7 @@ class BaseServer:
         self.__socket = socket.socket(socket_family, socket_type, proto)
         self.__socket.settimeout(self.__timeout)
         self.__socket.bind(address)  # IPとPORTをバインド
-        self.__socket.listen(10)  # 接続待ち (キューの最大値を指定)
+        self.__socket.listen(30)  # キューの最大値 = エポック数
 
         print("Waiting for connections...")
         conn, _ = self.__socket.accept()
