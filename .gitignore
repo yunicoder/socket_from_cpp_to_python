@@ -286,3 +286,4 @@ dkms.conf
 
 # image data
 image_send/img/*
+loss_and_accuracy_recieve/data/*
