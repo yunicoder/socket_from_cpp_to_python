@@ -1,5 +1,8 @@
 #include <iostream>
 
+#include <filesystem>
+#include <vector>
+
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -25,7 +28,7 @@
  * 失敗: NULL
  * 
  */
-char * readFileData(char *file_name, unsigned int *file_size) {
+char * readFileData(const char *file_name, unsigned int *file_size) {
     char *file_data = NULL;
     size_t read_size;
     unsigned int size;
@@ -90,15 +93,11 @@ void getFileNames(
 {
   for(const std::filesystem::directory_entry &i:std::filesystem::directory_iterator(path)){
     if(i.is_directory()){
-        std::cout << i.path().filename().string() << std::endl;
-
         // ラベルを計算
         cur_label = std::stoi(i.path().filename().string());
-
-        getFileNames(i.path().filename().string(),file_names,labels,cur_label);
+        getFileNames(i.path(),file_names,labels,cur_label);
     }else{
-      std::cout << i.path().filename().string() << std::endl;
-      file_names.push_back(i.path().filename().string());
+      file_names.push_back(i.path());
       labels.push_back(cur_label);
     }
   }
@@ -106,11 +105,14 @@ void getFileNames(
 
 
 int main() {
-    std::vector<std::string> dir_names;
+    std::vector<std::string> file_names;
     std::vector<size_t> labels;
-    getFileNames("./img/", dir_names, labels);
-    // winならこれ？https://qiita.com/tes2840/items/8d295b1caaf10eaf33ad
-
+    getFileNames("./img/", file_names, labels);
+    
+    // 読み込んだファイル一覧表示
+    // for (int i=0; i<file_names.size(); ++i){
+    //     std::cout << file_names[i] << std::endl;
+    // }
 
 
     /* ポート番号、ソケット */
@@ -157,37 +159,34 @@ int main() {
     printf("received: %s\n", buffer);
 
     // この後送る画像の数
-    int n_images = 3;
+    int n_images = (int)file_names.size();
     send(dstSocket, (char*)&n_images, sizeof(int), 0);
 
     /* パケット受信 */
     for(int i=0; i<n_images; i++) {
-    /* ---------- 画像読み込み ---------- */
-    char file_name[256];
-    unsigned int file_size;
-    char *file_data;
+        /* ---------- 画像読み込み ---------- */
+        unsigned int file_size;
+        char *file_data;
 
-    strcpy(file_name, "./img/temp.pgm");
+        /* ファイル全体のデータを読み込む */
+        file_data = readFileData(file_names[i].c_str(), &file_size);
+        if (file_data == NULL) {
+            printf("ファイルデータの読み込みに失敗しました\n");
+            return -1;
+        }
 
-    /* ファイル全体のデータを読み込む */
-    file_data = readFileData(file_name, &file_size);
-    if (file_data == NULL) {
-        printf("ファイルデータの読み込みに失敗しました\n");
-        return -1;
-    }
+        printf("file_size: %d\n", file_size);
+        printf("file_size: %s\n", file_data);
+        /* ---------- 画像読み込み ---------- */
 
-    printf("file_size: %d\n", file_size);
-    printf("file_size: %s\n", file_data);
-    /* ---------- 画像読み込み ---------- */
+        // ラベルを送る
+        size_t label = labels[i];
+        send(dstSocket, (char*)&label, sizeof(size_t), 0);
 
-    // ラベルを送る
-    size_t label = 0;
-    send(dstSocket, (char*)&label, sizeof(size_t), 0);
+        // この後送るfileの大きさを送る
+        send(dstSocket, (char*)&file_size, sizeof(int), 0);
 
-    // この後送るfileの大きさを送る
-    send(dstSocket, (char*)&file_size, sizeof(int), 0);
-
-    // fileを送信
-    send(dstSocket, file_data, file_size, 0);
+        // fileを送信
+        send(dstSocket, file_data, file_size, 0);
     }
 }
