@@ -285,4 +285,4 @@ dkms.conf
 
 
 # image data
-./image_send/image/
+image_send/img/*
